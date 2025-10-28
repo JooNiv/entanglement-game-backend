@@ -6,11 +6,13 @@ COPY --from=ghcr.io/astral-sh/uv:0.9.5 /uv /uvx /bin/
 RUN mkdir -p /.cache/uv && chmod 0777 /.cache/uv
 
 # Copy the project into the image
-ADD . /app
+COPY . /app
 
 # Sync the project into a new environment, asserting the lockfile is up to date
 WORKDIR /app
 RUN uv sync --locked --no-dev
+
+RUN chmod -R a+rX /app && chmod -R a+rwX /app/.venv || true
 
 EXPOSE 8000
 

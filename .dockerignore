@@ -7,3 +7,8 @@ __pycache__
 test.ipynb
 README.md
 .venv
+*.pyo
+*.pyd
+.gitignore
+Dockerfile
+docker-compose.yml
