@@ -2,6 +2,9 @@ FROM python:3.12-slim
 
 COPY --from=ghcr.io/astral-sh/uv:0.9.5 /uv /uvx /bin/
 
+# ensure uv can write its cache dir
+RUN mkdir -p /.cache/uv && chmod 0777 /.cache/uv
+
 # Copy the project into the image
 ADD . /app
 
