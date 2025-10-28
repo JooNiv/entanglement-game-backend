@@ -1,14 +1,14 @@
 services:
   backend:
     build:
-      context: ./backend
+      context: ./
       dockerfile: Dockerfile
     container_name: acf-demo-backend
     env_file:
-      - ./backend/.env
+      - .env
     environment:
       - PYTHONUNBUFFERED=1
     volumes:
-      - ./backend:/app
+      - .:/app
     ports:
       - "8000:8000"
