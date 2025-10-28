@@ -1,0 +1,3 @@
+qx_token = "token" # demo token, no token will use a simulator
+slurm_project_id = "project_id" # demo project
+device = "demo" #Q50 or Helmi for production
