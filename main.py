@@ -11,7 +11,8 @@ from qiskit.converters import circuit_to_dag
 import logging
 import io
 import base64
-matplotlib.use('Agg')
+
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 import os
@@ -21,23 +22,25 @@ show_qubits = False
 
 load_dotenv()
 
-qx_token = os.getenv('qx_token')
+qx_token = os.getenv("qx_token")
 if qx_token:
     os.environ["IQM_TOKEN"] = qx_token
 
-project_id = os.getenv('slurm_project_id')
-device = os.getenv('device')
+project_id = os.getenv("slurm_project_id")
+device = os.getenv("device")
 
 backend = IQMFakeAphrodite()
 
-if  qx_token:
+if qx_token:
     server_url = f"https://qx.vtt.fi/api/devices/{device}"
     provider = IQMProvider(server_url)
     backend = provider.get_backend()
 
+
 class RootOnlyFilter(logging.Filter):
     def filter(self, record):
         return record.name == "root"
+
 
 handler = logging.StreamHandler()
 handler.addFilter(RootOnlyFilter())
@@ -65,13 +68,41 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+def get_valid_qubits(q1, q2):
+    global device
+    global backend
+
+    if q1 <= 0 or q2 <= 0:
+        return {"error": "Qubit indices must be positive integers"}
+
+    max_qubit = max([int(i[2:]) for i in backend.architecture.qubits])
+
+    if q1 > max_qubit or q2 > max_qubit:
+        return {"error": f"Qubit indices must be less than {max_qubit}"}
+
+    # q1 += 1
+    # q2 += 1
+    try:
+        new_q_1 = backend._qb_to_idx["QB" + str(q1)]
+    except Exception as _e:
+        # print(f"Qubit {q1} is offline")
+        return {"error": f"Qubit {q1} is offline"}
+    try:
+        new_q_2 = backend._qb_to_idx["QB" + str(q2)]
+    except Exception as _e:
+        # print(f"Qubit {q2} is offline")
+        return {"error": f"Qubit {q2} is offline"}
+
+    return new_q_1, new_q_2
+
+
 def find_active_qubits(circuit):
+    dag = circuit_to_dag(circuit)
+    active_qubits = [circuit.find_bit(qubit).index for qubit in circuit.qubits if qubit not in dag.idle_wires()]
 
-   dag = circuit_to_dag(circuit)
-   active_qubits = [circuit.find_bit(qubit).index for qubit in circuit.qubits 
-                    if qubit not in dag.idle_wires()]
+    return active_qubits
 
-   return active_qubits
 
 def remove_idle_qwires(circ):
     active_qubits = find_active_qubits(circ)
@@ -80,7 +111,7 @@ def remove_idle_qwires(circ):
     for i in active_qubits:
         qrs.append(QuantumRegister(1, i))
 
-    cr = ClassicalRegister(2, 'c')
+    cr = ClassicalRegister(2, "c")
 
     new_qc = QuantumCircuit(*qrs, cr)
 
@@ -117,6 +148,7 @@ batch_lock = asyncio.Lock()
 BATCH_INTERVAL_SECONDS = 10
 MAX_LEADERBOARD_SIZE = 200
 
+
 async def transpile_circuit(task_id, username, q1, q2):
     pending_transpiled.setdefault(task_id, []).append({"status": "transpiling"})
 
@@ -140,12 +172,12 @@ async def transpile_circuit(task_id, username, q1, q2):
     msg = {"status": "transpiled"}
 
     try:
-        fig = new_transpiled.draw(output='mpl')
+        fig = new_transpiled.draw(output="mpl")
         buf = io.BytesIO()
-        fig.savefig(buf, format='png', bbox_inches='tight')
+        fig.savefig(buf, format="png", bbox_inches="tight")
         plt.close(fig)
         buf.seek(0)
-        img_b64 = base64.b64encode(buf.getvalue()).decode('ascii')
+        img_b64 = base64.b64encode(buf.getvalue()).decode("ascii")
         msg["image"] = f"data:image/png;base64,{img_b64}"
         transpiled_images[task_id] = msg["image"]
 
@@ -167,72 +199,18 @@ async def transpile_circuit(task_id, username, q1, q2):
             logging.info(f"Could not send 'transpiled' to {task_id}: {e}")
     return transpiled
 
-async def run_simulation(task_id, username, q1, q2, transpiled):
-    pending_statuses.setdefault(task_id, []).append({"status": "executing"})
-
-    ws = connected.get(task_id)
-    if ws:
-        try:
-            await ws.send_json({"status": "executing"})
-        except Exception as e:
-            logging.info(f"Could not send 'executing' to {task_id}: {e}")
-    logging.info(f"Here, starting run: {task_id}")
-    
-    # run in executor to avoid blocking event loop
-    loop = asyncio.get_running_loop()
-    try:
-        result = await loop.run_in_executor(
-            None,
-            lambda: backend.run(transpiled, shots=1000).result().get_counts()
-        )
-    except Exception as e:
-        logging.exception(f"Run failed for task {task_id}: {e}")
-        result = {}
-    pending_results[task_id] = result
-
-    
-    logging.info(f"Finished circuit from task: {task_id}")
-    if ws:
-        try:
-            await ws.send_json({"status": "done", "result": result})
-            await ws.close()
-        except Exception as e:
-            logging.info(f"Could not send 'done' to {task_id}: {e}")
-
-    # Add to leaderboard
-    leaderboard.append(
-        {
-            "username": username,
-            "q1": q1,
-            "q2": q2,
-            "result": result,
-            "image": transpiled_images.get(task_id)
-        }
-    )
-
-    if len(leaderboard) > MAX_LEADERBOARD_SIZE:
-        leaderboard.pop(0)
-
-    transpiled_images.pop(task_id, None)
-
-    # Notify user
-    ws = connected.get(task_id)
-    if ws:
-        try:
-            await ws.send_json({"status": "done", "result": result})
-            await ws.close()
-        except Exception as e:
-            logging.info(f"Could not resend 'done' to {task_id}: {e}")
 
 async def add_to_batch(task_id, username, q1, q2, transpiled):
     async with batch_lock:
-        circuit_batch.append({
-            "task_id": task_id,
-            "username": username,
-            "q1": q1,
-            "q2": q2,
-            "transpiled": transpiled,
-        })
+        circuit_batch.append(
+            {
+                "task_id": task_id,
+                "username": username,
+                "q1": q1,
+                "q2": q2,
+                "transpiled": transpiled,
+            }
+        )
 
     logging.info(f"Added task {task_id} to batch (batch size now: {len(circuit_batch)})")
 
@@ -271,9 +249,7 @@ async def batch_worker():
         # Run the batch in an executor to not block event loop
         loop = asyncio.get_running_loop()
         try:
-            run_ret = await loop.run_in_executor(
-                None, lambda: backend.run(circuits, shots=1000).result()
-            )
+            run_ret = await loop.run_in_executor(None, lambda: backend.run(circuits, shots=1000).result())
         except Exception as e:
             logging.exception(f"Batched run failed: {e}")
             # On failure, create empty results for all tasks
@@ -343,8 +319,8 @@ async def batch_worker():
             leaderboard.append(
                 {
                     "username": t.get("username"),
-                    "q1": t.get("q1"),
-                    "q2": t.get("q2"),
+                    "q1": backend._idx_to_qb[int(t.get("q1"))][2::],
+                    "q2": backend._idx_to_qb[int(t.get("q2"))][2::],
                     "result": result,
                     "image": transpiled_images.get(tid),
                 }
@@ -357,6 +333,7 @@ async def batch_worker():
 
         logging.info(f"Finished batched run for {batch_size} circuits")
 
+
 @app.on_event("startup")
 async def start_worker():
     # Start the transpile worker and the batch runner
@@ -364,20 +341,12 @@ async def start_worker():
     asyncio.create_task(batch_worker())
 
 
-async def worker():
-    while True:
-        task = await task_queue.get()
-        # await add_to_batch(**task)
-        await run_simulation(**task)
-        task_queue.task_done()
-
-
 async def transpile_worker():
     while True:
         task = await transpile_queue.get()
 
         transpiled = await transpile_circuit(**task)
-        
+
         # Append slurm metadata if using a real device (not demo)
         # and project_id and qx_token are set
         if device != "demo" and project_id and qx_token:
@@ -403,7 +372,15 @@ async def submit(job: dict):
     if q1 is None or q2 is None:
         raise HTTPException(status_code=400, detail="Missing 'q1' or 'q2' in job submission")
     if q1 == q2:
-        raise HTTPException(status_code=400, detail="'q1' and 'q2' must be different (cannot target the same qubit twice)")
+        raise HTTPException(status_code=400, detail="'q1' and 'q2' must be different")
+    valid_qubits = get_valid_qubits(q1, q2)
+    if "error" in valid_qubits:
+        raise HTTPException(status_code=400, detail=valid_qubits["error"])
+
+    q1, q2 = valid_qubits
+
+    job["q1"] = q1
+    job["q2"] = q2
 
     task_id = str(uuid.uuid4())
     await transpile_queue.put({"task_id": task_id, **job})
@@ -430,7 +407,7 @@ async def ws_status(ws: WebSocket, task_id: str):
                 try:
                     await ws.send_json(m)
                     logging.info(f"Sent pending transpile message for {task_id}")
-                    #logging.info(f"Message content: {m}")
+                    # logging.info(f"Message content: {m}")
                 except Exception as e:
                     logging.info(f"Could not send pending transpile message for {task_id}: {e}")
 
@@ -467,6 +444,7 @@ async def ws_status(ws: WebSocket, task_id: str):
 async def get_leaderboard():
     return leaderboard
 
+
 # Global Qubit pair visibility toggle
 @app.post("/show_qubits")
 async def toggle_show_qubits():
@@ -474,9 +452,11 @@ async def toggle_show_qubits():
     show_qubits = not show_qubits
     return show_qubits
 
+
 @app.get("/show_qubits")
 async def get_show_qubits():
     return show_qubits
+
 
 @app.delete("/reset")
 async def reset():
