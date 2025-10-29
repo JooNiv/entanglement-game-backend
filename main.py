@@ -477,3 +477,9 @@ async def toggle_show_qubits():
 @app.get("/show_qubits")
 async def get_show_qubits():
     return show_qubits
+
+@app.delete("/reset")
+async def reset():
+    global leaderboard
+    leaderboard = []
+    return {"leaderboard": leaderboard}
