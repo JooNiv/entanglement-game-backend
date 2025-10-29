@@ -146,7 +146,8 @@ batch_lock = asyncio.Lock()
 
 # How often (seconds) to flush the batch and call backend.run on all collected circuits
 BATCH_INTERVAL_SECONDS = 10
-MAX_LEADERBOARD_SIZE = 200
+MAX_LEADERBOARD_SIZE = 100
+BATCH_MAX_CIRCUITS = 100
 
 
 async def transpile_circuit(task_id, username, q1, q2):
@@ -216,122 +217,136 @@ async def add_to_batch(task_id, username, q1, q2, transpiled):
 
 
 async def batch_worker():
-    """Periodically flush the circuit batch and execute all collected transpiled circuits
-    in one backend.run call. Each result is routed back to its originating task_id.
+    """Periodically flush the circuit_batch into sub-batches (max BATCH_MAX_CIRCUITS each)
+    and execute each sub-batch with a separate backend.run call. Results are routed back
+    to their originating task_id.
     """
+    loop = asyncio.get_running_loop()
     while True:
-        await asyncio.sleep(BATCH_INTERVAL_SECONDS)
+        start = loop.time()
 
-        # Grab and clear the batch atomically
+        # Grab and clear the full queue atomically
         async with batch_lock:
             if not circuit_batch:
+                # Nothing to do this iteration, sleep full interval
+                elapsed = loop.time() - start
+                await asyncio.sleep(max(0, BATCH_INTERVAL_SECONDS - elapsed))
                 continue
-            batch = list(circuit_batch)
+            all_items = list(circuit_batch)
             circuit_batch.clear()
 
-        batch_size = len(batch)
-        logging.info(f"Flushing batch of {batch_size} circuits to backend.run")
+        total = len(all_items)
+        logging.info(f"Flushing {total} circuits from circuit_batch (max {BATCH_MAX_CIRCUITS} per run)")
 
-        # Mark each task as executing and try to notify connected websockets
-        for t in batch:
-            tid = t["task_id"]
-            pending_statuses.setdefault(tid, []).append({"status": "executing"})
-            ws = connected.get(tid)
-            if ws:
-                try:
-                    await ws.send_json({"status": "executing"})
-                except Exception as e:
-                    logging.info(f"Could not send 'executing' to {tid}: {e}")
+        # Split into sub-batches of at most BATCH_MAX_CIRCUITS
+        sub_batches = [all_items[i : i + BATCH_MAX_CIRCUITS] for i in range(0, total, BATCH_MAX_CIRCUITS)]
 
-        # Prepare list of transpiled circuits
-        circuits = [t["transpiled"] for t in batch]
+        # Process each sub-batch sequentially (one backend.run per sub-batch)
+        for batch in sub_batches:
+            batch_size = len(batch)
+            logging.info(f"Submitting sub-batch of {batch_size} circuits to backend.run")
 
-        # Run the batch in an executor to not block event loop
-        loop = asyncio.get_running_loop()
-        try:
-            run_ret = await loop.run_in_executor(None, lambda: backend.run(circuits, shots=1000).result())
-        except Exception as e:
-            logging.exception(f"Batched run failed: {e}")
-            # On failure, create empty results for all tasks
-            results_list = [{} for _ in range(batch_size)]
-        else:
-            # Normalize run_ret to a list of counts dicts in submission order.
-            results_list = []
+            # Mark each task as executing and try to notify connected websockets
+            for t in batch:
+                tid = t["task_id"]
+                pending_statuses.setdefault(tid, []).append({"status": "executing"})
+                ws = connected.get(tid)
+                if ws:
+                    try:
+                        await ws.send_json({"status": "executing"})
+                    except Exception as e:
+                        logging.info(f"Could not send 'executing' to {tid}: {e}")
+
+            # Prepare list of transpiled circuits
+            circuits = [t["transpiled"] for t in batch]
+
+            # Run the batch in an executor to not block event loop
+            loop_inner = asyncio.get_running_loop()
             try:
-                # If run_ret has a get_counts method, use it.
-                if hasattr(run_ret, "get_counts"):
-                    counts = run_ret.get_counts()
-                    # If single dict, wrap it
-                    if isinstance(counts, dict):
-                        results_list = [counts]
-                    else:
-                        # If get_counts returned list-like
-                        results_list = list(counts)
-                elif isinstance(run_ret, list):
-                    for elem in run_ret:
-                        if hasattr(elem, "get_counts"):
-                            try:
-                                results_list.append(elem.get_counts())
-                            except Exception:
-                                results_list.append({})
+                run_ret = await loop_inner.run_in_executor(None, lambda: backend.run(circuits, shots=1000).result())
+            except Exception as e:
+                logging.exception(f"Sub-batched run failed: {e}")
+                # On failure, create empty results for all tasks in this sub-batch
+                results_list = [{} for _ in range(batch_size)]
+            else:
+                # Normalize run_ret to a list of counts dicts in submission order.
+                results_list = []
+                try:
+                    if hasattr(run_ret, "get_counts"):
+                        counts = run_ret.get_counts()
+                        if isinstance(counts, dict):
+                            results_list = [counts]
                         else:
-                            results_list.append(elem)
-                elif isinstance(run_ret, dict):
-                    results_list = [run_ret]
-                else:
-                    # Try to .results
-                    if hasattr(run_ret, "results"):
-                        for r in run_ret.results:
-                            if hasattr(r, "get_counts"):
+                            results_list = list(counts)
+                    elif isinstance(run_ret, list):
+                        for elem in run_ret:
+                            if hasattr(elem, "get_counts"):
                                 try:
-                                    results_list.append(r.get_counts())
+                                    results_list.append(elem.get_counts())
                                 except Exception:
                                     results_list.append({})
                             else:
-                                results_list.append(r)
-                    else:
-                        # Fallback: treat as single result if possible
+                                results_list.append(elem)
+                    elif isinstance(run_ret, dict):
                         results_list = [run_ret]
-            except Exception as e:
-                logging.exception(f"Error normalizing batched run result: {e}")
-                results_list = [{} for _ in range(batch_size)]
-
-            # If the backend returned fewer results than expected, pad with empty dicts
-            if len(results_list) < batch_size:
-                results_list.extend([{}] * (batch_size - len(results_list)))
-
-        # Dispatch results back to tasks
-        for i, t in enumerate(batch):
-            tid = t["task_id"]
-            result = results_list[i] if i < len(results_list) else {}
-            pending_results[tid] = result
-
-            # Send done to connected websocket if present
-            ws = connected.get(tid)
-            if ws:
-                try:
-                    await ws.send_json({"status": "done", "result": result})
-                    await ws.close()
+                    else:
+                        if hasattr(run_ret, "results"):
+                            for r in run_ret.results:
+                                if hasattr(r, "get_counts"):
+                                    try:
+                                        results_list.append(r.get_counts())
+                                    except Exception:
+                                        results_list.append({})
+                                else:
+                                    results_list.append(r)
+                        else:
+                            results_list = [run_ret]
                 except Exception as e:
-                    logging.info(f"Could not send 'done' to {tid}: {e}")
+                    logging.exception(f"Error normalizing sub-batched run result: {e}")
+                    results_list = [{} for _ in range(batch_size)]
 
-            # Update leaderboard
-            leaderboard.append(
-                {
-                    "username": t.get("username"),
-                    "q1": backend._idx_to_qb[int(t.get("q1"))][2::],
-                    "q2": backend._idx_to_qb[int(t.get("q2"))][2::],
-                    "result": result,
-                    "image": transpiled_images.get(tid),
-                }
-            )
+                # If the backend returned fewer results than expected, pad with empty dicts
+                if len(results_list) < batch_size:
+                    results_list.extend([{}] * (batch_size - len(results_list)))
 
-            if len(leaderboard) > 200:
-                leaderboard.pop(0)
+            # Dispatch results back to tasks for this sub-batch
+            for i, t in enumerate(batch):
+                tid = t["task_id"]
+                result = results_list[i] if i < len(results_list) else {}
+                pending_results[tid] = result
 
-            transpiled_images.pop(tid, None)
+                # Send done to connected websocket if present
+                ws = connected.get(tid)
+                if ws:
+                    try:
+                        await ws.send_json({"status": "done", "result": result})
+                        await ws.close()
+                    except Exception as e:
+                        logging.info(f"Could not send 'done' to {tid}: {e}")
 
-        logging.info(f"Finished batched run for {batch_size} circuits")
+                # Update leaderboard
+                leaderboard.append(
+                    {
+                        "username": t.get("username"),
+                        "q1": backend._idx_to_qb[int(t.get("q1"))][2::],
+                        "q2": backend._idx_to_qb[int(t.get("q2"))][2::],
+                        "result": result,
+                        "image": transpiled_images.get(tid),
+                    }
+                )
+
+                if len(leaderboard) > MAX_LEADERBOARD_SIZE * 2:
+                    leaderboard.pop(0)
+
+                transpiled_images.pop(tid, None)
+
+            logging.info(f"Finished sub-batched run for {batch_size} circuits")
+
+        # After processing all sub-batches, sleep only the remainder of the interval.
+        elapsed = loop.time() - start
+        sleep_time = max(0, BATCH_INTERVAL_SECONDS - elapsed)
+        if sleep_time:
+            await asyncio.sleep(sleep_time)
 
 
 @app.on_event("startup")
