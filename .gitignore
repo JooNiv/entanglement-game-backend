@@ -19,6 +19,7 @@ __pycache__/
 # Editor directories and files
 *.pyc
 .vscode/*
+.vscode
 !.vscode/extensions.json
 .idea
 .DS_Store
