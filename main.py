@@ -36,10 +36,14 @@ device = os.getenv("device")
 
 backend = IQMFakeAphrodite()
 
-if qx_token:
-    server_url = f"https://qx.vtt.fi/api/devices/{device}"
-    provider = IQMProvider(server_url)
-    backend = provider.get_backend()
+try:
+    if qx_token:
+        server_url = f"https://qx.vtt.fi/api/devices/{device}"
+        provider = IQMProvider(server_url)
+        backend = provider.get_backend()
+except Exception as e:
+    logging.error(f"Error connecting to IQM backend: {e}")
+    backend = IQMFakeAphrodite()
 
 
 class RootOnlyFilter(logging.Filter):
