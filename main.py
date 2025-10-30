@@ -21,7 +21,10 @@ import matplotlib.pyplot as plt
 import os
 from dotenv import load_dotenv
 
-TEST = bool(os.getenv("TEST"))
+try:
+    TEST = bool(int(os.getenv("TEST")))
+except Exception:
+    TEST = False
 
 show_qubits = False
 
