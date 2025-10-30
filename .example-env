@@ -1,4 +1,11 @@
-qx_token = "token" # demo token, no token (or invalid token) will use a simulator
-slurm_project_id = "project_id" # demo project
-device = "demo" #Q50 or Helmi for production
-TEST = 0 # 1 true, 0 false
+# demo token, no token (or invalid token) will use a simulator
+qx_token = "token"
+
+# demo project
+slurm_project_id = "project_id" 
+
+#q50 or helmi for production
+device = "demo"
+
+# 1 true, 0 false
+TEST = moi
