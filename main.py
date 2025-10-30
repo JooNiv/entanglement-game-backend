@@ -21,14 +21,17 @@ import matplotlib.pyplot as plt
 import os
 from dotenv import load_dotenv
 
-try:
-    TEST = bool(int(os.getenv("TEST")))
-except Exception:
-    TEST = False
 
 show_qubits = False
 
 load_dotenv()
+
+try:
+    TEST = bool(int(os.getenv("TEST")))
+except Exception as e:
+    logging.error(f"Error loading TEST environment variable: {e}")
+    TEST = False
+print(f"TEST mode: {TEST}")
 
 qx_token = os.getenv("qx_token")
 if qx_token:
