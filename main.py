@@ -2,6 +2,9 @@ from fastapi import FastAPI, WebSocket, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import matplotlib
 from qiskit import QuantumCircuit, transpile, QuantumRegister, ClassicalRegister
+from qiskit.result import Result
+from qiskit.result.models import ExperimentResult, ExperimentResultData, QobjExperimentHeader
+
 from qiskit.circuit import CircuitInstruction
 import asyncio
 import uuid
@@ -17,6 +20,8 @@ import matplotlib.pyplot as plt
 
 import os
 from dotenv import load_dotenv
+
+TEST = bool(os.getenv("TEST"))
 
 show_qubits = False
 
@@ -263,7 +268,15 @@ async def batch_worker():
             # Run the batch in an executor to not block event loop
             loop_inner = asyncio.get_running_loop()
             try:
-                run_ret = await loop_inner.run_in_executor(None, lambda: backend.run(circuits, shots=1000).result())
+                if TEST:
+                    await asyncio.sleep(3)
+                    
+                    fake_res = Result(backend_name='aer_simulator', backend_version='0.13.3', qobj_id='', job_id='f370e58e-6e74-497b-b598-95145037111d', success=True, results=[ExperimentResult(shots=10, success=True, meas_level=2, data=ExperimentResultData(counts={'0x0': 4, '0x2': 1, '0x3': 5}), header=QobjExperimentHeader(creg_sizes=[['c', 2]], global_phase=0.0, memory_slots=2, n_qubits=54, name='circuit-19120', qreg_sizes=[['control', 1], ['ancilla', 52], ['target', 1]], metadata={}), status="DONE", seed_simulator=2951211792, metadata={'time_taken': 0.022419774, 'num_bind_params': 1, 'parallel_state_update': 8, 'parallel_shots': 1, 'required_memory_mb': 1, 'input_qubit_map': [[1, 1], [0, 0]], 'method': 'density_matrix', 'device': 'CPU', 'num_qubits': 2, 'sample_measure_time': 0.000954547, 'active_input_qubits': [0, 1], 'num_clbits': 2, 'remapped_qubits': False, 'runtime_parameter_bind': False, 'max_memory_mb': 7644, 'noise': 'superop', 'measure_sampling': True, 'batched_shots_optimization': False, 'fusion': {'applied': False, 'max_fused_qubits': 2, 'threshold': 7, 'enabled': True}}, time_taken=0.022419774)], date="2025-10-30T11:26:54.745781", status="COMPLETED", header=None, metadata={'time_taken_parameter_binding': 0.000692017, 'time_taken_execute': 0.224359233, 'omp_enabled': True, 'max_gpu_memory_mb': 0, 'max_memory_mb': 7644, 'parallel_experiments': 1}, time_taken=6.077264070510864)
+
+                    fake_res.results= len(circuits)*[fake_res.results[0]]
+                    run_ret = fake_res
+                else:
+                    run_ret = await loop_inner.run_in_executor(None, lambda: backend.run(circuits, shots=1000).result())
             except Exception as e:
                 logging.exception(f"Sub-batched run failed: {e}")
                 # On failure, create empty results for all tasks in this sub-batch
@@ -335,7 +348,7 @@ async def batch_worker():
                     }
                 )
 
-                if len(leaderboard) > MAX_LEADERBOARD_SIZE * 2:
+                if len(leaderboard) > MAX_LEADERBOARD_SIZE:
                     leaderboard.pop(0)
 
                 transpiled_images.pop(tid, None)
