@@ -60,25 +60,39 @@ except Exception as e:
     backend = IQMFakeAphrodite()
     DEVICE = "simulator"
 
-
-class RootOnlyFilter(logging.Filter):
-    def filter(self, record):
-        return record.name == "root"
-
-
 handler = logging.StreamHandler()
-handler.addFilter(RootOnlyFilter())
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    handlers=[handler],
+formatter = logging.Formatter(
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "%Y-%m-%d %H:%M:%S",
 )
+handler.setFormatter(formatter)
 
-logging.getLogger().propagate = False
+root = logging.getLogger()
+root.handlers = [handler]
+root.setLevel(logging.INFO)
+root.propagate = False
 
-# Create a logger instance
+for name in ("uvicorn", "uvicorn.error", "uvicorn.access"):
+    lg = logging.getLogger(name)
+    lg.handlers = [handler]
+    lg.setLevel(logging.INFO)
+    lg.propagate = False
+
+# quiet noisy libraries (Qiskit, matplotlib, etc.)
+noisy = (
+    "qiskit",
+    "qiskit.passmanager",
+    "qiskit.transpiler",
+    "qiskit.transpiler.passes",
+    "qiskit.passmanager.base_tasks",
+    "qiskit.transpiler.passes.basis",
+    "matplotlib",
+)
+for name in noisy:
+    lg = logging.getLogger(name)
+    lg.handlers = [handler]
+    lg.setLevel(logging.WARNING)
+    lg.propagate = False
 
 logger = logging.getLogger(__name__)
 
