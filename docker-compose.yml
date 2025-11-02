@@ -3,6 +3,13 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
+      args:
+        ADMIN_PASS: ${ADMIN_PASS}
+        AUTH_USER: ${AUTH_USER}
+        QX_TOKEN: ${QX_TOKEN}
+        TEST: ${TEST}
+        DEVICE: ${DEVICE}
+        SLURM_PROJECT_ID: ${SLURM_PROJECT_ID}
     container_name: acf-demo-backend
     env_file:
       - .env
