@@ -615,3 +615,7 @@ def toggle_pause(_: bool = Depends(require_token)):
     global PAUSED
     PAUSED = not PAUSED
     return {"paused": PAUSED}
+
+@app.get("/get_project_id")
+def get_project_id(_: bool = Depends(require_token)):
+    return {"project_id": PROJECT_ID}
