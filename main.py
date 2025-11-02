@@ -47,7 +47,7 @@ DEVICE = os.getenv("device") or "simulator"
 backend = IQMFakeAphrodite()
 
 try:
-    if QX_TOKEN and DEVICE != "simulator" and not TEST:
+    if QX_TOKEN and QX_TOKEN.strip() != "" and DEVICE != "simulator" and not TEST:
         server_url = f"https://qx.vtt.fi/api/devices/{DEVICE}"
         provider = IQMProvider(server_url)
         backend = provider.get_backend()
