@@ -8,4 +8,7 @@ slurm_project_id = "project_id"
 device = "demo"
 
 # 1 true, 0 false
-TEST = moi
+TEST = 0
+
+ADMIN_USER = "admin"
+ADMIN_PASS = "1234"
