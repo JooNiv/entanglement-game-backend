@@ -1,5 +1,6 @@
-from fastapi import FastAPI, WebSocket, HTTPException
+from fastapi import FastAPI, Header, WebSocket, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import matplotlib
 from qiskit import QuantumCircuit, transpile, QuantumRegister, ClassicalRegister
 from qiskit.result import Result
@@ -15,10 +16,12 @@ import logging
 import io
 import base64
 
+from typing import Annotated
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-import os
+import secrets, os, time
 from dotenv import load_dotenv
 
 
@@ -33,23 +36,29 @@ except Exception as e:
     TEST = False
 print(f"TEST mode: {TEST}")
 
-qx_token = os.getenv("qx_token")
-if qx_token:
-    os.environ["IQM_TOKEN"] = qx_token
+PAUSED = False
+QX_TOKEN = os.getenv("qx_token")
+if QX_TOKEN:
+    os.environ["IQM_TOKEN"] = QX_TOKEN
 
-project_id = os.getenv("slurm_project_id")
-device = os.getenv("device")
+PROJECT_ID = os.getenv("slurm_project_id")
+DEVICE = os.getenv("device") or "simulator"
 
 backend = IQMFakeAphrodite()
 
 try:
-    if qx_token:
-        server_url = f"https://qx.vtt.fi/api/devices/{device}"
+    if QX_TOKEN and DEVICE != "simulator" and not TEST:
+        server_url = f"https://qx.vtt.fi/api/devices/{DEVICE}"
         provider = IQMProvider(server_url)
         backend = provider.get_backend()
+    else:
+        backend = IQMFakeAphrodite()
+        DEVICE = "simulator"
+        logging.warning(f"Using simulator backend: {DEVICE}")
 except Exception as e:
     logging.error(f"Error connecting to IQM backend: {e}")
     backend = IQMFakeAphrodite()
+    DEVICE = "simulator"
 
 
 class RootOnlyFilter(logging.Filter):
@@ -83,9 +92,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+security = HTTPBasic()
+
+ADMIN_USER = os.getenv("ADMIN_USER", "admin")
+ADMIN_PASS = os.getenv("ADMIN_PASS", "secret")
+
+# Store a temporary token in memory
+TOKENS = {}
 
 def get_valid_qubits(q1, q2):
-    global device
+    global DEVICE
     global backend
 
     if q1 <= 0 or q2 <= 0:
@@ -386,11 +402,11 @@ async def transpile_worker():
         transpiled = await transpile_circuit(**task)
 
         # Append slurm metadata if using a real device (not demo)
-        # and project_id and qx_token are set
-        if device != "demo" and project_id and qx_token:
+        # and project_id and QX_TOKEN are set
+        if DEVICE != "demo" and PROJECT_ID and QX_TOKEN:
             if getattr(transpiled, "metadata", None) is None:
                 transpiled.metadata = {}
-            transpiled.metadata["project_id"] = project_id
+            transpiled.metadata["project_id"] = PROJECT_ID
 
         task_id = task["task_id"]
         q1 = task["q1"]
@@ -401,9 +417,38 @@ async def transpile_worker():
         await add_to_batch(task_id, username, q1, q2, transpiled)
         transpile_queue.task_done()
 
+def verify_admin(credentials: HTTPBasicCredentials):
+    correct_user = secrets.compare_digest(credentials.username, ADMIN_USER)
+    correct_pass = secrets.compare_digest(credentials.password, ADMIN_PASS)
+    if not (correct_user and correct_pass):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+    return True
+
+@app.post("/admin/login")
+def admin_login(credentials: HTTPBasicCredentials = Depends(security)):
+    verify_admin(credentials)
+    # Generate simple temporary token
+    token = secrets.token_hex(16)
+    TOKENS[token] = time.time() + 3600*4  # expires in 4 hours
+    return {"token": token}
+
+def require_token(x_token: str = Header(None)):
+    if x_token not in TOKENS:
+        raise HTTPException(status_code=401)
+    if TOKENS[x_token] < time.time():
+        raise HTTPException(status_code=401, detail="Token expired")
+    return True
+
+@app.post("/check_token")
+def check_token(_: bool = Depends(require_token)):
+    return {"status": "valid"}
 
 @app.post("/submit")
 async def submit(job: dict):
+
+    if PAUSED:
+        raise HTTPException(status_code=503, detail="Job submission is currently paused")
+
     q1 = job.get("q1")
     q2 = job.get("q2")
 
@@ -485,7 +530,7 @@ async def get_leaderboard():
 
 # Global Qubit pair visibility toggle
 @app.post("/show_qubits")
-async def toggle_show_qubits():
+async def toggle_show_qubits(_: bool = Depends(require_token)):
     global show_qubits
     show_qubits = not show_qubits
     return show_qubits
@@ -497,7 +542,76 @@ async def get_show_qubits():
 
 
 @app.delete("/reset")
-async def reset():
+async def reset(_: bool = Depends(require_token)):
     global leaderboard
     leaderboard = []
     return {"leaderboard": leaderboard}
+
+@app.post("/set_qx_token")
+def set_qx_token(body: dict, _: bool = Depends(require_token)):
+    global QX_TOKEN
+    qx_token = body.get("qx_token")
+
+    try:
+        server_url = f"https://qx.vtt.fi/api/devices/demo"
+        provider = IQMProvider(server_url)
+        test_backend = provider.get_backend()
+    except Exception as e:
+        logging.error(f"Error validating IQM token: {e}")
+        raise HTTPException(status_code=400, detail="Invalid Qx token") 
+
+    QX_TOKEN = qx_token
+    os.environ["IQM_TOKEN"] = QX_TOKEN
+    logging.info(QX_TOKEN)
+    return {"status": "success"}
+
+@app.post("/set_project_id")
+def set_project_id(body: dict, _: bool = Depends(require_token)):
+    global PROJECT_ID
+    PROJECT_ID = body.get("project_id")
+    logging.info(PROJECT_ID)
+    return {"status": "success"}
+
+@app.post("/set_device")
+def set_device(body: dict, _: bool = Depends(require_token)):
+    global DEVICE
+    global backend
+    device = body.get("device")
+
+    prev_device = DEVICE
+    
+    if device == prev_device:
+        return {"device": DEVICE}
+    elif device == "simulator":
+        backend = IQMFakeAphrodite()
+        return {"device": device}
+    else:
+        try:
+            if QX_TOKEN and device != "simulator" and not TEST:
+                server_url = f"https://qx.vtt.fi/api/devices/{device}"
+                provider = IQMProvider(server_url)
+                backend = provider.get_backend()
+            else:
+                backend = IQMFakeAphrodite()
+                DEVICE = "simulator"
+                return {"device": DEVICE, "error": "No valid Qx token, using simulator."}
+        except Exception as e:
+            logging.error(f"Error connecting to IQM backend: {e}")
+            server_url = f"https://qx.vtt.fi/api/devices/{prev_device}"
+            provider = IQMProvider(server_url)
+            backend = provider.get_backend()
+            return {"device": prev_device, "error": "Could not connect to device, reverted to previous."}
+
+    DEVICE = device
+    logging.info(DEVICE)
+    return {"device": DEVICE}
+
+@app.get("/get_device")
+def get_device():
+    return {"device": DEVICE}
+
+@app.post("/toggle_pause")
+def toggle_pause(_: bool = Depends(require_token)):
+    global PAUSED
+    PAUSED = not PAUSED
+    return {"paused": PAUSED}
