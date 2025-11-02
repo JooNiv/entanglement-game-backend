@@ -10,6 +10,25 @@ COPY . /app
 
 # Sync the project into a new environment, asserting the lockfile is up to date
 WORKDIR /app
+
+ARG ADMIN_PASS="password"
+ENV ADMIN_PASS=${ADMIN_PASS}
+
+ARG AUTH_USER="admin"
+ENV AUTH_USER=${AUTH_USER}
+
+ARG QX_TOKEN=""
+ENV QX_TOKEN=${QX_TOKEN}
+
+ARG TEST=0
+ENV TEST=${TEST}
+
+ARG DEVICE="simulator"
+ENV DEVICE=${DEVICE}
+
+ARG SLURM_PROJECT_ID="demo_project"
+ENV SLURM_PROJECT_ID=${SLURM_PROJECT_ID}
+
 RUN uv sync --locked --no-dev
 
 RUN chmod -R a+rX /app && chmod -R a+rwX /app/.venv || true
