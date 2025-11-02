@@ -193,6 +193,7 @@ batch_lock = asyncio.Lock()
 BATCH_INTERVAL_SECONDS = 10
 MAX_LEADERBOARD_SIZE = 100
 BATCH_MAX_CIRCUITS = 100
+TRANSPILER_WORKERS = 2
 
 
 async def transpile_circuit(task_id, username, q1, q2):
@@ -206,30 +207,42 @@ async def transpile_circuit(task_id, username, q1, q2):
             await ws.send_json({"status": "transpiling"})
         except Exception as e:
             logging.info(f"Could not send 'transpiling' to {task_id}: {e}")
+
     qc = QuantumCircuit(2, 2)
     qc.h(0)
     qc.cx(0, 1)
     qc.measure([0, 1], [0, 1])
 
-    transpiled = transpile(qc, backend=backend, initial_layout=[q1, q2])
-    new_transpiled = remove_idle_qwires(transpiled)
+    # Offload the blocking transpile call to the default threadpool
+    loop = asyncio.get_running_loop()
+    try:
+        transpiled = await loop.run_in_executor(None, lambda: transpile(qc, backend=backend, initial_layout=[q1, q2]))
+        # remove_idle_qwires is cheap; can run in-event-loop
+        new_transpiled = remove_idle_qwires(transpiled)
+    except Exception as e:
+        logging.exception(f"Transpile failed for task {task_id}: {e}")
+        raise
+
     logging.info(f"Transpiled circuit from task: {task_id}")
 
     msg = {"status": "transpiled"}
 
     try:
-        fig = new_transpiled.draw(output="mpl")
-        buf = io.BytesIO()
-        fig.savefig(buf, format="png", bbox_inches="tight")
-        plt.close(fig)
-        buf.seek(0)
-        img_b64 = base64.b64encode(buf.getvalue()).decode("ascii")
+        # Rendering can also be blocking, so run in executor.
+        def render_image(circuit):
+            fig = circuit.draw(output="mpl")
+            buf = io.BytesIO()
+            fig.savefig(buf, format="png", bbox_inches="tight")
+            plt.close(fig)
+            buf.seek(0)
+            return base64.b64encode(buf.getvalue()).decode("ascii")
+
+        img_b64 = await loop.run_in_executor(None, lambda: render_image(new_transpiled))
         msg["image"] = f"data:image/png;base64,{img_b64}"
         transpiled_images[task_id] = msg["image"]
 
         logging.info(f"Rendered circuit image for task: {task_id}")
     except Exception as e:
-        # if rendering fails, still send text
         logging.info(f"Error rendering circuit image for task {task_id}: {e}")
         msg["image_error"] = str(e)
 
@@ -405,7 +418,8 @@ async def batch_worker():
 @app.on_event("startup")
 async def start_worker():
     # Start the transpile worker and the batch runner
-    asyncio.create_task(transpile_worker())
+    for _ in range(TRANSPILER_WORKERS):
+        asyncio.create_task(transpile_worker())
     asyncio.create_task(batch_worker())
 
 
