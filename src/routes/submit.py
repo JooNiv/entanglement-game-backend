@@ -1,13 +1,13 @@
 from fastapi import APIRouter, HTTPException
 import uuid
-from src.state import transpile_queue, PAUSED
+import src.state as state
 from src.backend import map_user_qubits, QubitMappingError
 
 router = APIRouter()
 
 @router.post("/submit")
 async def submit(job: dict):
-    if PAUSED:
+    if state.PAUSED:
         raise HTTPException(status_code=503, detail="Job submission is currently paused")
 
     q1 = job.get("q1")
@@ -27,5 +27,5 @@ async def submit(job: dict):
     job["q2"] = mapped_q2
 
     task_id = str(uuid.uuid4())
-    await transpile_queue.put({"task_id": task_id, **job})
+    await state.transpile_queue.put({"task_id": task_id, **job})
     return {"task_id": task_id}

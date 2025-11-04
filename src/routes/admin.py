@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Header
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-import secrets, time
-from src.state import TOKENS, PAUSED
-from src.config import ADMIN_USER, ADMIN_PASS, PROJECT_ID
-import logging
+import secrets
+import time
+import src.state as state
+from src.config import ADMIN_USER, ADMIN_PASS
 
 router = APIRouter(prefix="/admin")
 security = HTTPBasic()
@@ -17,33 +17,20 @@ def verify_admin(credentials: HTTPBasicCredentials):
 
 @router.post("/login")
 def admin_login(credentials: HTTPBasicCredentials = Depends(security)):
-    global TOKENS
     verify_admin(credentials)
     token = secrets.token_hex(16)
-    TOKENS[token] = time.time() + 3600 * 4  # expires in 4 hours
-    logging.info(TOKENS)
+    state.TOKENS[token] = time.time() + 3600 * 4  # expires in 4 hours
     return {"token": token}
 
 def require_token(x_token: str = Header(None)):
-    logging.info(f"Verifying token: {x_token}")
     if x_token is None:
         raise HTTPException(status_code=401)
-    if x_token not in TOKENS:
+    if x_token not in state.TOKENS:
         raise HTTPException(status_code=401)
-    if TOKENS[x_token] < time.time():
+    if state.TOKENS[x_token] < time.time():
         raise HTTPException(status_code=401, detail="Token expired")
     return True
 
 @router.post("/check_token")
 def check_token(_: bool = Depends(require_token)):
     return {"status": "valid"}
-
-@router.post("/toggle_pause")
-def toggle_pause(_: bool = Depends(require_token)):
-    global PAUSED
-    PAUSED = not PAUSED
-    return {"paused": PAUSED}
-
-@router.get("/get_project_id")
-def get_project_id(_: bool = Depends(require_token)):
-    return {"project_id": PROJECT_ID}

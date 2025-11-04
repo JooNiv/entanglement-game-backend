@@ -10,7 +10,7 @@ from src.state import (
     leaderboard,
 )
 from src.config import TEST, BATCH_INTERVAL_SECONDS, BATCH_MAX_CIRCUITS, MAX_LEADERBOARD_SIZE
-from src.backend import backend
+import src.backend as backend_module
 from qiskit.result import Result
 from qiskit.result.models import ExperimentResult, ExperimentResultData, QobjExperimentHeader
 
@@ -70,7 +70,7 @@ async def batch_worker():
                     fake_res.results= len(circuits)*[fake_res.results[0]]
                     run_ret = fake_res
                 else:
-                    run_ret = await loop_inner.run_in_executor(None, lambda: backend.run(circuits, shots=1000).result())
+                    run_ret = await loop_inner.run_in_executor(None, lambda: backend_module.backend.run(circuits, shots=1000).result())
             except Exception as e:
                 logging.exception(f"Sub-batched run failed: {e}")
                 # On failure, create empty results for all tasks in this sub-batch
@@ -135,8 +135,8 @@ async def batch_worker():
                 leaderboard.append(
                     {
                         "username": t.get("username"),
-                        "q1": backend._idx_to_qb[int(t.get("q1"))][2::],
-                        "q2": backend._idx_to_qb[int(t.get("q2"))][2::],
+                        "q1": (backend_module.backend._idx_to_qb[int(t.get("q1"))][2::] if backend_module.backend else int(t.get("q1"))),
+                        "q2": (backend_module.backend._idx_to_qb[int(t.get("q2"))][2::] if backend_module.backend else int(t.get("q2"))),
                         "result": result,
                         "image": transpiled_images.get(tid),
                     }

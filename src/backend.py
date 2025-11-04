@@ -1,9 +1,8 @@
 from iqm.qiskit_iqm import IQMFakeAphrodite, IQMProvider
-from src.config import QX_TOKEN, DEVICE, TEST
+import src.config as config
 import logging
 import os
 from typing import Tuple, Optional
-from iqm.qiskit_iqm import IQMFakeAphrodite, IQMProvider
 
 logger = logging.getLogger(__name__)
 
@@ -15,32 +14,32 @@ def init_backend(device: Optional[str] = None, qx_token: Optional[str] = None, t
     Initialize the module-level backend according to provided parameters or environment.
     Call this during app startup. This function is idempotent.
     """
-    global backend, DEVICE, QX_TOKEN, TEST
+    global backend
 
     if device is not None:
-        DEVICE = device
+        config.DEVICE = device
     if qx_token is not None:
-        QX_TOKEN = qx_token
+        config.QX_TOKEN = qx_token
     if test is not None:
-        TEST = test
+        config.TEST = test
 
     # Prefer explicit simulator for TEST or when no valid QX token/device provided.
-    if TEST or not QX_TOKEN or DEVICE == "simulator":
+    if config.TEST or not config.QX_TOKEN or config.DEVICE == "simulator":
         backend = IQMFakeAphrodite()
-        DEVICE = "simulator"
+        config.DEVICE = "simulator"
         logger.info("Using simulator backend")
         return
 
     # Try to connect to IQMProvider
     try:
-        server_url = f"https://qx.vtt.fi/api/devices/{DEVICE}"
+        server_url = f"https://qx.vtt.fi/api/devices/{config.DEVICE}"
         provider = IQMProvider(server_url)
         backend = provider.get_backend()
-        logger.info(f"Connected to IQM backend: {DEVICE}")
+        logger.info(f"Connected to IQM backend: {config.DEVICE}")
     except Exception as exc:
         logger.exception("Failed to connect to IQM backend, falling back to simulator")
         backend = IQMFakeAphrodite()
-        DEVICE = "simulator"
+        config.DEVICE = "simulator"
 
 def get_backend():
     """Return the current backend instance (may be simulator)."""
@@ -54,11 +53,12 @@ def validate_qx_token(token: str) -> bool:
     Quick check that the provided token can be used to fetch a test backend.
     Returns True on success, False otherwise. Does not mutate module state.
     """
-    prev_token = os.environ.get("IQM_TOKEN")
+    prev_token = config.QX_TOKEN
     if not token:
         return False
     try:
         os.environ["IQM_TOKEN"] = token
+        config.QX_TOKEN = token
         # Try to fetch the demo device as a lightweight validation
         server_url = "https://qx.vtt.fi/api/devices/demo"
         provider = IQMProvider(server_url)
@@ -67,33 +67,30 @@ def validate_qx_token(token: str) -> bool:
     except Exception:
         logger.exception("QX token validation failed")
         os.environ["IQM_TOKEN"] = prev_token or ""
+        config.QX_TOKEN = prev_token or ""
         return False
 
 def set_device(device: str, qx_token: Optional[str] = None) -> dict:
     """
     Switch backend device. Returns a dict describing the result.
     """
-    global DEVICE
-    global QX_TOKEN
-    prev = DEVICE
-
-    logger.info(QX_TOKEN)
-
-    if not QX_TOKEN or QX_TOKEN.strip() == "":
-        return {"device": DEVICE, "error": "No QX token set, cannot switch device."}
+    prev = config.DEVICE
+    
+    if not config.QX_TOKEN or config.QX_TOKEN.strip() == "":
+        return {"device": config.DEVICE, "error": "No QX token set, cannot switch device."}
 
     if device == prev:
-        return {"device": DEVICE}
+        return {"device": config.DEVICE}
 
     # try to switch; on failure revert to previous
     try:
-        init_backend(device=device, qx_token=qx_token or QX_TOKEN)
+        init_backend(device=device, qx_token=qx_token or config.QX_TOKEN)
     except Exception as exc:
         logger.exception("Error switching device")
-        init_backend(device=prev, qx_token=qx_token or QX_TOKEN)
+        init_backend(device=prev, qx_token=qx_token or config.QX_TOKEN)
         return {"device": prev, "error": "Could not connect to device, reverted to previous."}
 
-    return {"device": DEVICE}
+    return {"device": config.DEVICE}
 
 # Qubit mapping helpers
 

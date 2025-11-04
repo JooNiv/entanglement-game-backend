@@ -11,8 +11,8 @@ from src.state import (
     circuit_batch,
     batch_lock,
 )
-from src.backend import backend
-from src.config import DEVICE, PROJECT_ID, QX_TOKEN
+import src.backend as backend_module
+import src.config as config
 from src.utils import remove_idle_qwires
 import matplotlib.pyplot as plt
 
@@ -51,7 +51,7 @@ async def transpile_circuit(task_id, username, q1, q2):
     # Offload the blocking transpile call to the default threadpool
     loop = asyncio.get_running_loop()
     try:
-        transpiled = await loop.run_in_executor(None, lambda: transpile(qc, backend=backend, initial_layout=[q1, q2]))
+        transpiled = await loop.run_in_executor(None, lambda: transpile(qc, backend=backend_module.backend, initial_layout=[q1, q2]))
         # remove_idle_qwires is cheap; can run in-event-loop
         new_transpiled = remove_idle_qwires(transpiled)
     except Exception as e:
@@ -101,10 +101,10 @@ async def transpile_worker():
 
         # Append slurm metadata if using a real device (not demo)
         # and project_id and QX_TOKEN are set
-        if DEVICE != "demo" and PROJECT_ID and QX_TOKEN:
+        if config.DEVICE != "demo" and config.PROJECT_ID and config.QX_TOKEN:
             if getattr(transpiled, "metadata", None) is None:
                 transpiled.metadata = {}
-            transpiled.metadata["project_id"] = PROJECT_ID
+            transpiled.metadata["project_id"] = config.PROJECT_ID
 
         task_id = task["task_id"]
         q1 = task["q1"]

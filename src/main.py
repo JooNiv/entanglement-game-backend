@@ -1,10 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import src.logging_setup
+from src.workers import transpiler, batcher
+from fastapi import Request
 
 from src.routes import admin, submit, ws, device, leaderboard
 from src import backend
 from src.config import TRANSPILER_WORKERS
+import src.config as config
 import asyncio
 
 app = FastAPI()
@@ -29,7 +32,6 @@ async def start_workers():
     # initialize backend (lazy init also available)
     backend.init_backend()
     # start transpiler workers and batch worker
-    from src.workers import transpiler, batcher
     for _ in range(TRANSPILER_WORKERS):
         asyncio.create_task(transpiler.transpile_worker())
     asyncio.create_task(batcher.batch_worker())
