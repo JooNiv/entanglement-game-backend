@@ -3,13 +3,13 @@ services:
     build:
       context: ./
       dockerfile: Dockerfile
-      args:
-        ADMIN_PASS: ${ADMIN_PASS}
-        AUTH_USER: ${AUTH_USER}
-        QX_TOKEN: ${QX_TOKEN}
-        TEST: ${TEST}
-        DEVICE: ${DEVICE}
-        SLURM_PROJECT_ID: ${SLURM_PROJECT_ID}
+      secrets:
+        - qx_token
+        - ADMIN_USER
+        - ADMIN_PASS
+        - TEST
+        - DEVICE
+        - SLURM_PROJECT_ID
     container_name: acf-demo-backend
     env_file:
       - .env
@@ -19,3 +19,16 @@ services:
       - .:/app
     ports:
       - "8000:8000"
+secrets:
+  qx_token:
+    external: true
+  ADMIN_USER:
+    external: true
+  ADMIN_PASS:
+    external: true
+  TEST:
+    external: true
+  DEVICE:
+    external: true
+  SLURM_PROJECT_ID:
+    external: true

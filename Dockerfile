@@ -11,18 +11,6 @@ COPY . /app
 # Sync the project into a new environment, asserting the lockfile is up to date
 WORKDIR /app
 
-ARG ADMIN_PASS="password"
-ENV ADMIN_PASS=${ADMIN_PASS}
-
-ARG AUTH_USER="admin"
-ENV AUTH_USER=${AUTH_USER}
-
-ARG QX_TOKEN=""
-ENV QX_TOKEN=${QX_TOKEN}
-
-ARG TEST=0
-ENV TEST=${TEST}
-
 ARG DEVICE="simulator"
 ENV DEVICE=${DEVICE}
 
@@ -36,4 +24,4 @@ RUN chmod -R a+rX /app && chmod -R a+rwX /app/.venv || true
 EXPOSE 8000
 
 # Default command runs fastapi pointing at main.py
-CMD ["uv", "run", "fastapi", "run", "main.py", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uv", "run", "fastapi", "run", "src/main.py", "--host", "0.0.0.0", "--port", "8000"]
