@@ -21,6 +21,13 @@ def set_qx_token(body: dict, _: bool = Depends(require_token)):
     logging.info("Set QX token")
     return {"status": "success"}
 
+@router.post("/reset_qx_token")
+def reset_qx_token(_: bool = Depends(require_token)):
+    config.QX_TOKEN = ""
+    os.environ["IQM_TOKEN"] = ""
+    logging.info("Reset QX token")
+    return {"status": "success"}
+
 @router.post("/set_project_id")
 def set_project_id(body: dict, _: bool = Depends(require_token)):
     pid = body.get("project_id")
