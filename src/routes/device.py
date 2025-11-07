@@ -25,6 +25,7 @@ def set_qx_token(body: dict, _: bool = Depends(require_token)):
 def reset_qx_token(_: bool = Depends(require_token)):
     config.QX_TOKEN = ""
     os.environ["IQM_TOKEN"] = ""
+    backend_set_device("simulator")
     logging.info("Reset QX token")
     return {"status": "success"}
 
