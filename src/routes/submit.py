@@ -29,3 +29,7 @@ async def submit(job: dict):
     task_id = str(uuid.uuid4())
     await state.transpile_queue.put({"task_id": task_id, **job})
     return {"task_id": task_id}
+
+@router.get("/get_paused")
+async def get_paused():
+    return {"paused": state.PAUSED}
