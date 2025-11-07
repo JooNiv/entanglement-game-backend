@@ -3,22 +3,15 @@ import base64
 import io
 import logging
 from qiskit import QuantumCircuit, transpile
-from src.state import (
-    transpile_queue,
-    pending_transpiled,
-    connected,
-    transpiled_images,
-    circuit_batch,
-    batch_lock,
-)
+import src.state as state
 import src.backend as backend_module
 import src.config as config
 from src.utils import remove_idle_qwires
 import matplotlib.pyplot as plt
 
 async def add_to_batch(task_id, username, q1, q2, transpiled):
-    async with batch_lock:
-        circuit_batch.append(
+    async with state.batch_lock:
+        state.circuit_batch.append(
             {
                 "task_id": task_id,
                 "username": username,
@@ -28,15 +21,15 @@ async def add_to_batch(task_id, username, q1, q2, transpiled):
             }
         )
 
-    logging.info(f"Added task {task_id} to batch (batch size now: {len(circuit_batch)})")
+    logging.info(f"Added task {task_id} to batch (batch size now: {len(state.circuit_batch)})")
 
 
 async def transpile_circuit(task_id, username, q1, q2):
-    pending_transpiled.setdefault(task_id, []).append({"status": "transpiling"})
+    state.pending_transpiled.setdefault(task_id, []).append({"status": "transpiling"})
 
     # Try to send an immediate 'transpiling' update if the websocket is
     # already connected
-    ws = connected.get(task_id)
+    ws = state.connected.get(task_id)
     if ws:
         try:
             await ws.send_json({"status": "transpiling"})
@@ -74,7 +67,7 @@ async def transpile_circuit(task_id, username, q1, q2):
 
         img_b64 = await loop.run_in_executor(None, lambda: render_image(new_transpiled))
         msg["image"] = f"data:image/png;base64,{img_b64}"
-        transpiled_images[task_id] = msg["image"]
+        state.transpiled_images[task_id] = msg["image"]
 
         logging.info(f"Rendered circuit image for task: {task_id}")
     except Exception as e:
@@ -82,10 +75,10 @@ async def transpile_circuit(task_id, username, q1, q2):
         msg["image_error"] = str(e)
 
     # Append the final transpiled payload (may include the rendered image).
-    pending_transpiled.setdefault(task_id, []).append(msg)
+    state.pending_transpiled.setdefault(task_id, []).append(msg)
 
     # If the client is already connected, try to send the final message now.
-    ws = connected.get(task_id)
+    ws = state.connected.get(task_id)
     if ws:
         try:
             await ws.send_json(msg)
@@ -95,7 +88,7 @@ async def transpile_circuit(task_id, username, q1, q2):
 
 async def transpile_worker():
     while True:
-        task = await transpile_queue.get()
+        task = await state.transpile_queue.get()
 
         transpiled = await transpile_circuit(**task)
 
@@ -113,4 +106,4 @@ async def transpile_worker():
 
         # Add the transpiled circuit to the batch for periodic execution
         await add_to_batch(task_id, username, q1, q2, transpiled)
-        transpile_queue.task_done()
+        state.transpile_queue.task_done()

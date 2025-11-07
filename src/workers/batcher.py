@@ -1,14 +1,6 @@
 import asyncio
 import logging
-from src.state import (
-    circuit_batch,
-    batch_lock,
-    connected,
-    pending_results,
-    pending_statuses,
-    transpiled_images,
-    leaderboard,
-)
+import src.state as state
 from src.config import TEST, BATCH_INTERVAL_SECONDS, BATCH_MAX_CIRCUITS, MAX_LEADERBOARD_SIZE
 import src.backend as backend_module
 from qiskit.result import Result
@@ -25,14 +17,14 @@ async def batch_worker():
         start = loop.time()
 
         # Grab and clear the full queue atomically
-        async with batch_lock:
-            if not circuit_batch:
+        async with state.batch_lock:
+            if not state.circuit_batch:
                 # Nothing to do this iteration, sleep full interval
                 elapsed = loop.time() - start
                 await asyncio.sleep(max(0, BATCH_INTERVAL_SECONDS - elapsed))
                 continue
-            all_items = list(circuit_batch)
-            circuit_batch.clear()
+            all_items = list(state.circuit_batch)
+            state.circuit_batch.clear()
 
         total = len(all_items)
         logging.info(f"Flushing {total} circuits from circuit_batch (max {BATCH_MAX_CIRCUITS} per run)")
@@ -48,8 +40,8 @@ async def batch_worker():
             # Mark each task as executing and try to notify connected websockets
             for t in batch:
                 tid = t["task_id"]
-                pending_statuses.setdefault(tid, []).append({"status": "executing"})
-                ws = connected.get(tid)
+                state.pending_statuses.setdefault(tid, []).append({"status": "executing"})
+                ws = state.connected.get(tid)
                 if ws:
                     try:
                         await ws.send_json({"status": "executing"})
@@ -120,10 +112,10 @@ async def batch_worker():
             for i, t in enumerate(batch):
                 tid = t["task_id"]
                 result = results_list[i] if i < len(results_list) else {}
-                pending_results[tid] = result
+                state.pending_results[tid] = result
 
                 # Send done to connected websocket if present
-                ws = connected.get(tid)
+                ws = state.connected.get(tid)
                 if ws:
                     try:
                         await ws.send_json({"status": "done", "result": result})
@@ -132,20 +124,20 @@ async def batch_worker():
                         logging.info(f"Could not send 'done' to {tid}: {e}")
 
                 # Update leaderboard
-                leaderboard.append(
+                state.leaderboard.append(
                     {
                         "username": t.get("username"),
                         "q1": (backend_module.backend._idx_to_qb[int(t.get("q1"))][2::] if backend_module.backend else int(t.get("q1"))),
                         "q2": (backend_module.backend._idx_to_qb[int(t.get("q2"))][2::] if backend_module.backend else int(t.get("q2"))),
                         "result": result,
-                        "image": transpiled_images.get(tid),
+                        "image": state.transpiled_images.get(tid),
                     }
                 )
 
-                if len(leaderboard) > MAX_LEADERBOARD_SIZE:
-                    leaderboard.pop(0)
+                if len(state.leaderboard) > MAX_LEADERBOARD_SIZE:
+                    state.leaderboard.pop(0)
 
-                transpiled_images.pop(tid, None)
+                state.transpiled_images.pop(tid, None)
 
             logging.info(f"Finished sub-batched run for {batch_size} circuits")
 
