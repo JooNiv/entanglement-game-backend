@@ -136,7 +136,7 @@ async def batch_worker():
 
                 state.leaderboard.sort(key=lambda x: x["result"].get("00", 0 + x["result"].get("11", 0)), reverse=True)
 
-                logging.info([(x["username"], x["result"]) for x in state.leaderboard])
+                #logging.info([(x["username"], x["result"]) for x in state.leaderboard])
 
                 if len(state.leaderboard) > MAX_LEADERBOARD_SIZE:
                     state.leaderboard.pop()
