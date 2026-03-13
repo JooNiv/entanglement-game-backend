@@ -17,14 +17,14 @@ def set_qx_token(body: dict, _: bool = Depends(require_token)):
     if not valid:
         raise HTTPException(status_code=400, detail="Invalid Qx token")
     config.QX_TOKEN = qx_token
-    os.environ["IQM_TOKEN"] = config.QX_TOKEN
+    #os.environ["IQM_TOKEN"] = config.QX_TOKEN
     logging.info("Set QX token")
     return {"status": "success"}
 
 @router.post("/reset_qx_token")
 def reset_qx_token(_: bool = Depends(require_token)):
     config.QX_TOKEN = ""
-    os.environ["IQM_TOKEN"] = ""
+    #os.environ["IQM_TOKEN"] = ""
     backend_set_device("simulator")
     logging.info("Reset QX token")
     return {"status": "success"}

@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 # Module-level state
 backend = None  # will hold IQM backend or IQMFakeAphrodite instance
 
+
 def init_backend(device: Optional[str] = None, qx_token: Optional[str] = None, test: Optional[bool] = None) -> None:
     """
     Initialize the module-level backend according to provided parameters or environment.
@@ -32,14 +33,15 @@ def init_backend(device: Optional[str] = None, qx_token: Optional[str] = None, t
 
     # Try to connect to IQMProvider
     try:
-        server_url = f"https://qx.vtt.fi/api/devices/{config.DEVICE}"
-        provider = IQMProvider(server_url)
+        server_url = "https://qx.vtt.fi/"
+        provider = IQMProvider(url=server_url, quantum_computer=config.DEVICE, token=config.QX_TOKEN)
         backend = provider.get_backend()
         logger.info(f"Connected to IQM backend: {config.DEVICE}")
     except Exception as exc:
-        logger.exception("Failed to connect to IQM backend, falling back to simulator")
+        logger.exception(f"Failed to connect to IQM backend, falling back to simulator. ${exc}")
         backend = IQMFakeAphrodite()
         config.DEVICE = "simulator"
+
 
 def get_backend():
     """Return the current backend instance (may be simulator)."""
@@ -47,6 +49,7 @@ def get_backend():
         # Lazy init from env if not initialized explicitly
         init_backend()
     return backend
+
 
 def validate_qx_token(token: str) -> bool:
     """
@@ -57,25 +60,26 @@ def validate_qx_token(token: str) -> bool:
     if not token:
         return False
     try:
-        os.environ["IQM_TOKEN"] = token
+        #os.environ["IQM_TOKEN"] = token
         config.QX_TOKEN = token
         # Try to fetch the demo device as a lightweight validation
-        server_url = "https://qx.vtt.fi/api/devices/demo"
-        provider = IQMProvider(server_url)
+        server_url = "https://qx.vtt.fi"
+        provider = IQMProvider(url = server_url, quantum_computer="demo", token=token)
         _ = provider.get_backend()
         return True
     except Exception:
         logger.exception("QX token validation failed")
-        os.environ["IQM_TOKEN"] = prev_token or ""
+        #os.environ["IQM_TOKEN"] = prev_token or ""
         config.QX_TOKEN = prev_token or ""
         return False
+
 
 def set_device(device: str, qx_token: Optional[str] = None) -> dict:
     """
     Switch backend device. Returns a dict describing the result.
     """
     prev = config.DEVICE
-    
+
     if not config.QX_TOKEN or config.QX_TOKEN.strip() == "":
         return {"device": config.DEVICE, "error": "No QX token set, cannot switch device."}
 
@@ -92,10 +96,13 @@ def set_device(device: str, qx_token: Optional[str] = None) -> dict:
 
     return {"device": config.DEVICE}
 
+
 # Qubit mapping helpers
+
 
 class QubitMappingError(ValueError):
     pass
+
 
 def max_user_qubit() -> int:
     """Return max user-visible qubit index (integer). Raises QubitMappingError if backend can't provide it."""
@@ -107,6 +114,7 @@ def max_user_qubit() -> int:
     except Exception as exc:
         logger.exception("Failed to determine max qubit")
         raise QubitMappingError("Backend does not expose architecture.qubits")
+
 
 def map_user_qubits(q1: int, q2: int) -> Tuple[int, int]:
     """

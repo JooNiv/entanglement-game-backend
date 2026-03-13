@@ -99,6 +99,9 @@ async def transpile_worker():
                 transpiled.metadata = {}
             transpiled.metadata["project_id"] = config.PROJECT_ID
 
+            logging.info(f"Added project_id metadata to transpiled circuit for task {task['task_id']}")
+            logging.info(f"Transpiled circuit metadata: {transpiled.metadata}")
+
         task_id = task["task_id"]
         q1 = task["q1"]
         q2 = task["q2"]
