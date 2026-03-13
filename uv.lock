@@ -152,7 +152,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", extras = ["standard"], specifier = ">=0.118.0" },
-    { name = "qiskit-iqm", specifier = "==17.8" },
+    { name = "qiskit-iqm", specifier = "==18.2" },
 ]
 
 [package.metadata.requires-dev]
@@ -735,7 +735,7 @@ wheels = [
 
 [[package]]
 name = "iqm-client"
-version = "22.16"
+version = "22.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "numpy" },
@@ -743,9 +743,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/54/a2/e1074dc6f4d93006db7de4f353bd8052af40f73c4973571a8782cba945c0/iqm_client-22.16.tar.gz", hash = "sha256:fd9a1b1ef7cb823092175878893df39bb94e9ac59e193195547ef6a2829c7f6e", size = 305513, upload-time = "2025-04-03T13:27:55.699Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ba/c4/1b2a2ef0ce28eebbf1a415e36747b2a5021973265929737dff3fca2a32c8/iqm_client-22.9.tar.gz", hash = "sha256:ccf1ca3b481a2cee928731a25141443b5da90e6885e177c0f6ec663436526eda", size = 249845, upload-time = "2025-03-17T15:05:57.533Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5b/9b/f850cc18e0e4eca265a7cb76d746cd397d3fea51cf9cfd93928336cfcadf/iqm_client-22.16-py3-none-any.whl", hash = "sha256:bb9565e3e3b121d38ff3f9e7398128ea422f3a47763bd6bd893bf9d2fc446ba1", size = 143229, upload-time = "2025-04-03T13:27:53.546Z" },
+    { url = "https://files.pythonhosted.org/packages/c0/1a/c8e3d495720acb227d6b6718a3cbafbeb2ed106c83c6d3f4be5c83af3390/iqm_client-22.9-py3-none-any.whl", hash = "sha256:afb4920eb761a09c555afcf47341681be037adc58ca9325c426729dc896f14da", size = 52621, upload-time = "2025-03-17T15:05:55.861Z" },
 ]
 
 [[package]]
@@ -1828,7 +1828,7 @@ wheels = [
 
 [[package]]
 name = "qiskit-iqm"
-version = "17.8"
+version = "18.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "iqm-client" },
@@ -1836,9 +1836,9 @@ dependencies = [
     { name = "qiskit" },
     { name = "qiskit-aer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7b/6d/93dd1c3346156d92d4659fc06a1a952fb5e660b9d494ffd2fc226f46e625/qiskit_iqm-17.8.tar.gz", hash = "sha256:3f83be126d7fef289b8966b08abd749a2790a088fb87d33f39cddaa6ab61c101", size = 255375, upload-time = "2025-03-21T08:40:19.553Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b1/1a/33934ec4236c3488b17d5027cbc7b9edfd3e4e8d1133624c0e6581c72dfd/qiskit_iqm-18.2.tar.gz", hash = "sha256:7623e5e3d36c8de87709a3019d584f9974dfc7f7a8178bace4599f5d9cc308b6", size = 255976, upload-time = "2025-09-16T16:25:46.85Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ae/2f/a31b96142e562147f32603a6f37925da83b254048b39ffb8de785e7cddf4/qiskit_iqm-17.8-py3-none-any.whl", hash = "sha256:43406f9d6182e1026db12eaf1d7a9610a4c4af9d65c9cccbc101dd0d43f02efe", size = 65429, upload-time = "2025-03-21T08:40:18.041Z" },
+    { url = "https://files.pythonhosted.org/packages/74/94/f2bcf021ea79fc056f21ce61363621e717370bbe89fc5a57e60a26700234/qiskit_iqm-18.2-py3-none-any.whl", hash = "sha256:77300e4f130b8f9560d448d8136ff5248a0373e194e75d96dc9c7d7f75971265", size = 65738, upload-time = "2025-09-16T16:25:45.455Z" },
 ]
 
 [[package]]
