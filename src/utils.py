@@ -11,16 +11,39 @@ def find_active_qubits(circuit: QuantumCircuit):
     dag = circuit_to_dag(circuit)
     return [circuit.find_bit(qubit).index for qubit in circuit.qubits if qubit not in dag.idle_wires()]
 
-def remove_idle_qwires(circ: QuantumCircuit):
-    active_qubits = find_active_qubits(circ)
-    qrs = [QuantumRegister(1, i) for i in active_qubits]
-    cr = ClassicalRegister(2, "c")
-    new_qc = QuantumCircuit(*qrs, cr)
-    for inst in circ.data:
-        qubits = [active_qubits.index(circ.find_bit(j).index) for j in inst.qubits]
-        new_instruction = CircuitInstruction(inst.operation, qubits, inst.clbits)
-        new_qc.append(new_instruction)
-    return new_qc
+def _count_gates(circuit: QuantumCircuit):
+    """Count the number of gates acting on each qubit in a QuantumCircuit.
+
+    Args:
+        circuit (QuantumCircuit): The input quantum circuit.
+
+    Returns:
+        dict[Qubit, int]: A dictionary mapping each qubit to the number of gates 
+        acting on it.
+    """
+    gate_count = dict.fromkeys(circuit.qubits, 0)
+    for instruction in circuit.data:
+        for qubit in instruction.qubits:
+            gate_count[qubit] += 1
+
+    return gate_count
+
+
+def remove_idle_qwires(circuit: QuantumCircuit) -> QuantumCircuit:
+    """Remove idle wires from a QuantumCircuit.
+
+    Args:
+        circuit (QuantumCircuit): The input quantum circuit.
+
+    Returns:
+        QuantumCircuit: A new quantum circuit with idle wires removed.
+    """
+    gate_count = _count_gates(circuit)
+    for qubit, count in gate_count.items():
+        if count == 0:
+            circuit.qubits.remove(qubit)
+    
+    return circuit
 
 def render_circuit_image(circuit: QuantumCircuit) -> str:
     fig = circuit.draw(output="mpl")

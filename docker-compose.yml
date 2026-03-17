@@ -15,8 +15,8 @@ services:
       - .env
     environment:
       - PYTHONUNBUFFERED=1
-    volumes:
-      - .:/app
+    #volumes:
+      #- .:/app
     ports:
       - "8000:8000"
 secrets:

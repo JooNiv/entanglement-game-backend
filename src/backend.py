@@ -32,12 +32,13 @@ def init_backend(device: Optional[str] = None, qx_token: Optional[str] = None, t
 
     # Try to connect to IQMProvider
     try:
-        server_url = f"https://qx.vtt.fi/api/devices/{config.DEVICE}"
-        provider = IQMProvider(server_url)
+        server_url = "https://qx.vtt.fi/"
+        #provider = IQMProvider(server_url)
+        provider = IQMProvider(url=server_url, quantum_computer=config.DEVICE, token=config.QX_TOKEN)
         backend = provider.get_backend()
         logger.info(f"Connected to IQM backend: {config.DEVICE}")
     except Exception as exc:
-        logger.exception("Failed to connect to IQM backend, falling back to simulator")
+        logger.exception(f"Failed to connect to IQM backend, falling back to simulator. ${exc}")
         backend = IQMFakeAphrodite()
         config.DEVICE = "simulator"
 
@@ -57,16 +58,17 @@ def validate_qx_token(token: str) -> bool:
     if not token:
         return False
     try:
-        os.environ["IQM_TOKEN"] = token
+        #os.environ["IQM_TOKEN"] = token
         config.QX_TOKEN = token
         # Try to fetch the demo device as a lightweight validation
-        server_url = "https://qx.vtt.fi/api/devices/demo"
-        provider = IQMProvider(server_url)
+        server_url = "https://qx.vtt.fi"
+        provider = IQMProvider(url=server_url, quantum_computer=config.DEVICE, token=config.QX_TOKEN)
+        #provider = IQMProvider(server_url)
         _ = provider.get_backend()
         return True
     except Exception:
         logger.exception("QX token validation failed")
-        os.environ["IQM_TOKEN"] = prev_token or ""
+        #os.environ["IQM_TOKEN"] = prev_token or ""
         config.QX_TOKEN = prev_token or ""
         return False
 
@@ -86,7 +88,7 @@ def set_device(device: str, qx_token: Optional[str] = None) -> dict:
     try:
         init_backend(device=device, qx_token=qx_token or config.QX_TOKEN)
     except Exception as exc:
-        logger.exception("Error switching device")
+        logger.exception(f"Error switching device. {exc}")
         init_backend(device=prev, qx_token=qx_token or config.QX_TOKEN)
         return {"device": prev, "error": "Could not connect to device, reverted to previous."}
 
