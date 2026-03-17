@@ -38,7 +38,7 @@ def init_backend(device: Optional[str] = None, qx_token: Optional[str] = None, t
         backend = provider.get_backend()
         logger.info(f"Connected to IQM backend: {config.DEVICE}")
     except Exception as exc:
-        logger.exception(f"Failed to connect to IQM backend, falling back to simulator. ${exc}")
+        logger.exception(f"Failed to connect to IQM backend, falling back to simulator. {exc}")
         backend = IQMFakeAphrodite()
         config.DEVICE = "simulator"
 
@@ -61,13 +61,14 @@ def validate_qx_token(token: str) -> bool:
         #os.environ["IQM_TOKEN"] = token
         config.QX_TOKEN = token
         # Try to fetch the demo device as a lightweight validation
-        server_url = "https://qx.vtt.fi"
-        provider = IQMProvider(url=server_url, quantum_computer=config.DEVICE, token=config.QX_TOKEN)
+        #server_url = "https://qx.vtt.fi/"
+        #provider = IQMProvider(url=server_url, quantum_computer="demo", token=config.QX_TOKEN)
+        set_device("demo", qx_token=token)
         #provider = IQMProvider(server_url)
-        _ = provider.get_backend()
+        #_ = provider.get_backend()
         return True
-    except Exception:
-        logger.exception("QX token validation failed")
+    except Exception as exc:
+        logger.exception(f"QX token validation failed. {exc}")
         #os.environ["IQM_TOKEN"] = prev_token or ""
         config.QX_TOKEN = prev_token or ""
         return False
@@ -86,6 +87,7 @@ def set_device(device: str, qx_token: Optional[str] = None) -> dict:
 
     # try to switch; on failure revert to previous
     try:
+        logger.info(f"Switching device from {prev} to {device}")
         init_backend(device=device, qx_token=qx_token or config.QX_TOKEN)
     except Exception as exc:
         logger.exception(f"Error switching device. {exc}")
