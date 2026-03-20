@@ -7,7 +7,7 @@ requires-python = "==3.12.*"
 dependencies = [
     "fastapi[standard]>=0.118.0",
     "qiskit==2.1.2",
-    "iqm-client[qiskit]==33.0.2",
+    "iqm-client[qiskit]==33.0.5",
 ]
 
 [dependency-groups]
@@ -17,6 +17,6 @@ dev = [
     "notebook>=7.4.7",
     "pylatexenc>=2.10",
     "qiskit==2.1.2",
-    "iqm-client[qiskit]==33.0.2",
+    "iqm-client[qiskit]==33.0.5",
     "ruff>=0.14.1",
 ]

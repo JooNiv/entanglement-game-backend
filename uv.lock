@@ -153,14 +153,14 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", extras = ["standard"], specifier = ">=0.118.0" },
-    { name = "iqm-client", extras = ["qiskit"], specifier = "==33.0.2" },
+    { name = "iqm-client", extras = ["qiskit"], specifier = "==33.0.5" },
     { name = "qiskit", specifier = "==2.1.2" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "fastapi", extras = ["standard"], specifier = ">=0.118.0" },
-    { name = "iqm-client", extras = ["qiskit"], specifier = "==33.0.2" },
+    { name = "iqm-client", extras = ["qiskit"], specifier = "==33.0.5" },
     { name = "matplotlib", specifier = ">=3.10.6" },
     { name = "notebook", specifier = ">=7.4.7" },
     { name = "pylatexenc", specifier = ">=2.10" },
@@ -689,7 +689,7 @@ wheels = [
 
 [[package]]
 name = "iqm-client"
-version = "33.0.2"
+version = "33.0.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "iqm-pulse" },
@@ -699,9 +699,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/61/12/73acdf06f1c91251d7b9b6e39e39b6a1ed45f4792dbd963a7ecff2af96fe/iqm_client-33.0.2.tar.gz", hash = "sha256:71374ff1c15315d81a6bc0be7975242794d4027ee11a36185622a0efaf7884a6", size = 316381, upload-time = "2025-12-12T09:04:40.854Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/06/94/4f03e4cd3f8a6e04dececf11b719c07c0f3c136ba2fc6879819406142c8e/iqm_client-33.0.5.tar.gz", hash = "sha256:c5129d2d868906f86c2b675759343076a879644d8302c0a7efc3e45ab443e1aa", size = 316404, upload-time = "2026-02-18T17:20:46.388Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/48/87/6f2d74336afa323499cdc0ee6f708254a3f0a1e1e3320896b1a84a4481af/iqm_client-33.0.2-py3-none-any.whl", hash = "sha256:eba5b8249136a7e4d0104bafd7a029249f6eaf89079368ca70de0116cebe6f3d", size = 148249, upload-time = "2025-12-12T09:04:38.459Z" },
+    { url = "https://files.pythonhosted.org/packages/ea/45/36bfe9b45baf57254424d6f12804452959510d458b2978a38da405bc2a51/iqm_client-33.0.5-py3-none-any.whl", hash = "sha256:247f3dc28a91c0a5b6ecb528665a0cfb307021d0ad7f538f9d88e2c586b294ce", size = 148271, upload-time = "2026-02-18T17:20:44.099Z" },
 ]
 
 [package.optional-dependencies]
@@ -1466,7 +1466,7 @@ name = "pexpect"
 version = "4.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ptyprocess" },
+    { name = "ptyprocess", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/42/92/cc564bf6381ff43ce1f4d06852fc19a2f11d180f23dc32d9588bee2f149d/pexpect-4.9.0.tar.gz", hash = "sha256:ee7d41123f3c9911050ea2c2dac107568dc43b2d3b0c7557a33212c398ead30f", size = 166450, upload-time = "2023-11-25T09:07:26.339Z" }
 wheels = [
