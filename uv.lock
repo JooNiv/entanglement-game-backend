@@ -153,14 +153,14 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "fastapi", extras = ["standard"], specifier = ">=0.118.0" },
-    { name = "iqm-client", extras = ["qiskit"], specifier = "==33.0.2" },
+    { name = "iqm-client", extras = ["qiskit"], specifier = "==34.0.1" },
     { name = "qiskit", specifier = "==2.1.2" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "fastapi", extras = ["standard"], specifier = ">=0.118.0" },
-    { name = "iqm-client", extras = ["qiskit"], specifier = "==33.0.2" },
+    { name = "iqm-client", extras = ["qiskit"], specifier = "==34.0.1" },
     { name = "matplotlib", specifier = ">=3.10.6" },
     { name = "notebook", specifier = ">=7.4.7" },
     { name = "pylatexenc", specifier = ">=2.10" },
@@ -689,7 +689,7 @@ wheels = [
 
 [[package]]
 name = "iqm-client"
-version = "33.0.2"
+version = "34.0.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "iqm-pulse" },
@@ -699,9 +699,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/61/12/73acdf06f1c91251d7b9b6e39e39b6a1ed45f4792dbd963a7ecff2af96fe/iqm_client-33.0.2.tar.gz", hash = "sha256:71374ff1c15315d81a6bc0be7975242794d4027ee11a36185622a0efaf7884a6", size = 316381, upload-time = "2025-12-12T09:04:40.854Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/12/9f/3b1207a44b76cfea3b4d0a127cbeea5f3945352aa4279a800b7e5036b134/iqm_client-34.0.1.tar.gz", hash = "sha256:063b359598ef2f650afe7ea293b64385202e15f7c126725841ce05e790bf86c6", size = 366118, upload-time = "2026-04-09T10:07:47.675Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/48/87/6f2d74336afa323499cdc0ee6f708254a3f0a1e1e3320896b1a84a4481af/iqm_client-33.0.2-py3-none-any.whl", hash = "sha256:eba5b8249136a7e4d0104bafd7a029249f6eaf89079368ca70de0116cebe6f3d", size = 148249, upload-time = "2025-12-12T09:04:38.459Z" },
+    { url = "https://files.pythonhosted.org/packages/ec/ed/16dcc87a7895a1f83022c16c229c88bf7329ad3e6d88b6041f6c48b6fdb5/iqm_client-34.0.1-py3-none-any.whl", hash = "sha256:6afcf7349ce7d45b1271767571b45c20c39c0e07c3f4617fc5317b1fa7e25ba5", size = 149121, upload-time = "2026-04-09T10:07:45.696Z" },
 ]
 
 [package.optional-dependencies]
@@ -728,7 +728,7 @@ wheels = [
 
 [[package]]
 name = "iqm-exa-common"
-version = "27.4.5"
+version = "27.5.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "iqm-data-definitions" },
@@ -744,38 +744,39 @@ dependencies = [
     { name = "types-six" },
     { name = "xarray" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/66/56/98827160372a1ab149ab626afe334da59aed1309b64d1dde27e9de8b2e30/iqm_exa_common-27.4.5.tar.gz", hash = "sha256:42caa485bcdb8ea833adf2f03c0f8e36dc4cfa606acaa44ccba89637a496b253", size = 239597, upload-time = "2026-02-18T17:20:50.988Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a8/02/4ca51e6460799c0f540718676bcaac49f0f03db3fbfe7e53dd6896e2e181/iqm_exa_common-27.5.1.tar.gz", hash = "sha256:eaa756192644b5b3d3698d4c29caf16694fe2228dcfb4dd2c46400bfe7109002", size = 271863, upload-time = "2026-04-09T10:07:51.521Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/38/8e/338f62cf1cf2cb2d1440dc6dbf22fa86fec9fc88b7c642a9374da52a4a8f/iqm_exa_common-27.4.5-py3-none-any.whl", hash = "sha256:5dda62e66178d0ff31836e7eba9507230e4da52598bb61e6514594d998f017e5", size = 89879, upload-time = "2026-02-18T17:20:48.531Z" },
+    { url = "https://files.pythonhosted.org/packages/c2/18/402197519ef9045ebca9ee20d388c9a97764c524eeeaf7e1fb919ab982e0/iqm_exa_common-27.5.1-py3-none-any.whl", hash = "sha256:01c15b3880ef07482d031addea93ef9b0968240e01456904ae22fc5454fbceb4", size = 95178, upload-time = "2026-04-09T10:07:49.619Z" },
 ]
 
 [[package]]
 name = "iqm-pulse"
-version = "12.7.5"
+version = "13.0.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "iqm-data-definitions" },
+    { name = "iqm-exa-common" },
     { name = "jinja2" },
     { name = "numpy" },
     { name = "python-rapidjson" },
     { name = "scipy" },
     { name = "scipy-stubs" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/46/3c/ef3d257a094d361c51936f28e0e6289c1d04fca3363abe96a14c6c24c0d5/iqm_pulse-12.7.5.tar.gz", hash = "sha256:cea114947b2680292356e99b07d164b18b32760cdef7f1f2b590cb40f5829301", size = 628694, upload-time = "2026-02-18T17:21:00.879Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/14/71/c15566cfe05844da65cb5c7dd998a41827e3281ade21c3627b03dd7d3304/iqm_pulse-13.0.1.tar.gz", hash = "sha256:00cab3cb67466c226cad6a24e65dab9f196570e9ddf004a929279d353185373b", size = 670413, upload-time = "2026-04-09T10:08:02.551Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2f/d9/e17ca04996621abfc1f1133ed209820cae5add78bb267e6cdeb0bc09585f/iqm_pulse-12.7.5-py3-none-any.whl", hash = "sha256:38196fa9ffc4e76547a1ef13cbad5b31583016a5857e21b8494bd88cf22ac555", size = 421637, upload-time = "2026-02-18T17:20:58.071Z" },
+    { url = "https://files.pythonhosted.org/packages/77/a6/1f6c540eac0045c181d18e65a98921707a565ed844978a012d57d6460b8b/iqm_pulse-13.0.1-py3-none-any.whl", hash = "sha256:db1ae52e4f51b030b9f40744daa0aedfb95954ddee8b244d6441b7ffd11a5585", size = 426370, upload-time = "2026-04-09T10:07:59.448Z" },
 ]
 
 [[package]]
 name = "iqm-station-control-client"
-version = "12.0.5"
+version = "12.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "grpcio" },
     { name = "iqm-data-definitions" },
     { name = "iqm-exa-common" },
+    { name = "iqm-pulse" },
     { name = "opentelemetry-exporter-otlp" },
-    { name = "protobuf" },
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "requests" },
@@ -784,9 +785,9 @@ dependencies = [
     { name = "types-requests" },
     { name = "types-tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/18/f1/7b00ecf3500c88d071461ede05af151e559f19ce112a00f50644742d4898/iqm_station_control_client-12.0.5.tar.gz", hash = "sha256:390c50cbcaf9d5ab77122b5ffa206cde2b304ef15995aedfffd47f62f3f59b2e", size = 233923, upload-time = "2026-02-18T17:20:54.94Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/49/0b/87b87958ee6709882b193b1a705e62e47f6a751b5235f7d607d00504ee66/iqm_station_control_client-12.1.1.tar.gz", hash = "sha256:14c548d5c536af840d43269779215f084af5851bc5911f0a47fdcbd503c4e71e", size = 246209, upload-time = "2026-04-09T10:08:13.479Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a8/fc/50be9c5063628ca6846c2ca315c09239a6344c8b89b7949f17a32ce4039e/iqm_station_control_client-12.0.5-py3-none-any.whl", hash = "sha256:aaa2a0b5e50e2047c07a0e8cab290c849518b43348ae543d72c5a8dbfcc83d0d", size = 76875, upload-time = "2026-02-18T17:20:53.033Z" },
+    { url = "https://files.pythonhosted.org/packages/b7/8b/4fa3d8774cdc16daddd6da8df990e007dc4ab51851e0c5d0c7306620e87f/iqm_station_control_client-12.1.1-py3-none-any.whl", hash = "sha256:16225374c88fbb4ada331791a7ab176c78c18cbd519fa05e689063b75ccff646", size = 77563, upload-time = "2026-04-09T10:08:11.942Z" },
 ]
 
 [[package]]
@@ -1466,7 +1467,7 @@ name = "pexpect"
 version = "4.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ptyprocess" },
+    { name = "ptyprocess", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/42/92/cc564bf6381ff43ce1f4d06852fc19a2f11d180f23dc32d9588bee2f149d/pexpect-4.9.0.tar.gz", hash = "sha256:ee7d41123f3c9911050ea2c2dac107568dc43b2d3b0c7557a33212c398ead30f", size = 166450, upload-time = "2023-11-25T09:07:26.339Z" }
 wheels = [
@@ -1979,18 +1980,16 @@ wheels = [
 
 [[package]]
 name = "ruamel-yaml-clib"
-version = "0.2.8"
+version = "0.2.11"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/46/ab/bab9eb1566cd16f060b54055dd39cf6a34bfa0240c53a7218c43e974295b/ruamel.yaml.clib-0.2.8.tar.gz", hash = "sha256:beb2e0404003de9a4cab9753a8805a8fe9320ee6673136ed7f04255fe60bb512", size = 213824, upload-time = "2023-10-03T18:12:42.315Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e5/3e/4a7a8585797bbc3590c2b2b35788dc3d1c30570c8c73605c43cd86cfbd09/ruamel.yaml.clib-0.2.11.tar.gz", hash = "sha256:b7d300172e2b28319330aaec1ef287014176d31753e8af38d75b04b6bfbeadf4", size = 225326, upload-time = "2024-10-20T09:32:32.937Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7a/a2/eb5e9d088cb9d15c24d956944c09dca0a89108ad6e2e913c099ef36e3f0d/ruamel.yaml.clib-0.2.8-cp312-cp312-macosx_10_9_universal2.whl", hash = "sha256:ebc06178e8821efc9692ea7544aa5644217358490145629914d8020042c24aa1", size = 144636, upload-time = "2023-10-03T18:13:09.564Z" },
-    { url = "https://files.pythonhosted.org/packages/66/98/8de4f22bbfd9135deb3422e96d450c4bc0a57d38c25976119307d2efe0aa/ruamel.yaml.clib-0.2.8-cp312-cp312-macosx_13_0_arm64.whl", hash = "sha256:edaef1c1200c4b4cb914583150dcaa3bc30e592e907c01117c08b13a07255ec2", size = 135684, upload-time = "2023-10-03T18:13:12.11Z" },
-    { url = "https://files.pythonhosted.org/packages/30/d3/5fe978cd01a61c12efd24d65fa68c6f28f28c8073a06cf11db3a854390ca/ruamel.yaml.clib-0.2.8-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:d176b57452ab5b7028ac47e7b3cf644bcfdc8cacfecf7e71759f7f51a59e5c92", size = 734571, upload-time = "2023-10-03T18:13:14.523Z" },
-    { url = "https://files.pythonhosted.org/packages/55/b3/e2531a050758b717c969cbf76c103b75d8a01e11af931b94ba656117fbe9/ruamel.yaml.clib-0.2.8-cp312-cp312-manylinux_2_24_aarch64.whl", hash = "sha256:1dc67314e7e1086c9fdf2680b7b6c2be1c0d8e3a8279f2e993ca2a7545fecf62", size = 643946, upload-time = "2023-11-09T07:40:20.598Z" },
-    { url = "https://files.pythonhosted.org/packages/0d/aa/06db7ca0995b513538402e11280282c615b5ae5f09eb820460d35fb69715/ruamel.yaml.clib-0.2.8-cp312-cp312-musllinux_1_1_i686.whl", hash = "sha256:3213ece08ea033eb159ac52ae052a4899b56ecc124bb80020d9bbceeb50258e9", size = 692169, upload-time = "2023-10-22T15:35:38.378Z" },
-    { url = "https://files.pythonhosted.org/packages/27/38/4cf4d482b84ecdf51efae6635cc5483a83cf5ca9d9c13e205a750e251696/ruamel.yaml.clib-0.2.8-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:aab7fd643f71d7946f2ee58cc88c9b7bfc97debd71dcc93e03e2d174628e7e2d", size = 740325, upload-time = "2023-10-22T15:35:40.03Z" },
-    { url = "https://files.pythonhosted.org/packages/6f/67/c62c6eea53a4feb042727a3d6c18f50dc99683c2b199c06bd2a9e3db8e22/ruamel.yaml.clib-0.2.8-cp312-cp312-win32.whl", hash = "sha256:5c365d91c88390c8d0a8545df0b5857172824b1c604e867161e6b3d59a827eaa", size = 98639, upload-time = "2023-10-22T15:01:25.115Z" },
-    { url = "https://files.pythonhosted.org/packages/10/d2/52a3d810d0b5b3720725c0504a27b3fced7b6f310fe928f7019d79387bc1/ruamel.yaml.clib-0.2.8-cp312-cp312-win_amd64.whl", hash = "sha256:1758ce7d8e1a29d23de54a16ae867abd370f01b5a69e1a3ba75223eaa3ca1a1b", size = 115305, upload-time = "2023-10-22T15:01:27.265Z" },
+    { url = "https://files.pythonhosted.org/packages/ab/26/bb1646d3621b35f9dd785bfd57d7ec66c56fe89e3897c27811edfb4c8267/ruamel.yaml.clib-0.2.11-cp312-cp312-macosx_14_0_arm64.whl", hash = "sha256:a6e9c28b3e2e0833b9f2a8ed8f1b067b9e639fbe76e41be0f41f5c865f53003a", size = 132551, upload-time = "2024-10-20T09:32:05.941Z" },
+    { url = "https://files.pythonhosted.org/packages/99/7c/bcfbbe97ea4f47d479a5e1a00a6e9e0cbaf7e33da3dca94e2db0e02efdb6/ruamel.yaml.clib-0.2.11-cp312-cp312-manylinux2014_aarch64.whl", hash = "sha256:66381212fcabe36feebf7cfd3ea26d1b3f42fe05b5e5fa716130f826e69ff960", size = 647363, upload-time = "2024-10-20T09:32:08.103Z" },
+    { url = "https://files.pythonhosted.org/packages/e4/87/283cb99ef3ab3fecd119ed6c2ab7df3afa6834f4defd06a410d194ca0990/ruamel.yaml.clib-0.2.11-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:02b1069f639d2d919e7364235c59891f5291b3171b162875601e28cd23a214a3", size = 754119, upload-time = "2024-10-20T09:32:10.397Z" },
+    { url = "https://files.pythonhosted.org/packages/52/18/9543e8a75c9065dcc3161e17b2148dfd42134f3b2c6b550f0fd10f71d693/ruamel.yaml.clib-0.2.11-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:8aa9b43e89078f8ea4de02c32589753ce5df60cb3260ca098d3936acc311fa26", size = 706496, upload-time = "2024-10-20T09:32:12.137Z" },
+    { url = "https://files.pythonhosted.org/packages/ea/01/c8f92b0205ddd9dfa57f4f994b63098a5d65220b1d674c1fb00d6afb0d7a/ruamel.yaml.clib-0.2.11-cp312-cp312-win32.whl", hash = "sha256:850d0a5bfa8e3d0b83ae5743d34c21e81f425d3a7d3fbe17902a4c028c5bdd39", size = 98777, upload-time = "2024-10-20T09:32:13.692Z" },
+    { url = "https://files.pythonhosted.org/packages/8b/29/39ee3c60e94261701e2d6dbec2d97de7edfddce44b0e356734e64c35f713/ruamel.yaml.clib-0.2.11-cp312-cp312-win_amd64.whl", hash = "sha256:884c62deb71bd9dd2a5fd67c78f8263d88693ecec0361c4ce28e4dceb3f5a7eb", size = 115524, upload-time = "2024-10-20T09:32:14.622Z" },
 ]
 
 [[package]]
