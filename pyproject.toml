@@ -18,5 +18,5 @@ dev = [
     "pylatexenc>=2.10",
     "qiskit==2.1.2",
     "iqm-client[qiskit]==33.0.2",
-    "ruff>=0.14.1",
+    "ruff>=0.15.11",
 ]
